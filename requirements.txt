@@ -5,3 +5,8 @@ python-dotenv
 requests
 supabase
 feedparser
+supabase
+pydantic
+trafilatura
+fake-useragent
+asyncio
