@@ -1,11 +1,11 @@
 fastapi
 uvicorn
 python-telegram-bot
-python-dotenv
-requests
 supabase
-feedparser
 pydantic
+feedparser
 trafilatura
 fake-useragent
-asyncio
+pandas
+httpx
+lxml_html_clean
