@@ -1,4 +1,5 @@
 import os
+import html
 import logging
 from contextlib import asynccontextmanager
 from typing import List, Optional, cast, AsyncGenerator, Any
@@ -74,7 +75,7 @@ async def trigger_trend_generation(message: Any) -> None:
         await message.reply_text("System not fully initialized.")
         return
 
-    status_msg = await message.reply_text("🔥 *Scanning the web for live tech trends...*", parse_mode="Markdown")
+    status_msg = await message.reply_text("🔥 <b>Scanning the web for live tech trends...</b>", parse_mode="HTML")
 
     try:
         # Initialize config manager
@@ -95,17 +96,26 @@ async def trigger_trend_generation(message: Any) -> None:
             trend_names = [t.name for t in trends]
             keyboard = build_dynamic_keyboard(trend_names)
             
-            # Format a nice summary to show the user what was searched
+            # Escape and format dynamic strings to prevent HTML parsing errors
+            safe_category = html.escape(category).title()
+            safe_subcat = html.escape(subcat).replace("_", " ").title()
             topics_str = ", ".join(topics) if topics else "general news"
-            text = f"🔥 *Live Trends Discovered*\n\n**Category:** {category} > {subcat}\n**Focus:** {topics_str}\n\n👇 Select a trend below:"
+            safe_topics = html.escape(topics_str)
             
-            await status_msg.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
+            text = (
+                f"🔥 <b>Live Trends Discovered</b>\n\n"
+                f"<b>Category:</b> {safe_category} &gt; {safe_subcat}\n"
+                f"<b>Focus:</b> {safe_topics}\n\n"
+                f"👇 Select a trend below:"
+            )
+            
+            await status_msg.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         else:
-            await status_msg.edit_text("⚠️ *Scan Complete*, but no significant trends were extracted.", parse_mode="Markdown")
+            await status_msg.edit_text("⚠️ <b>Scan Complete</b>, but no significant trends were extracted.", parse_mode="HTML")
 
     except Exception as e:
         logger.error(f"Trend generation failed: {e}", exc_info=True)
-        await status_msg.edit_text(f"❌ *Error generating trends*: {str(e)}", parse_mode="Markdown")
+        await status_msg.edit_text(f"❌ <b>Error generating trends</b>: {html.escape(str(e))}", parse_mode="HTML")
 
 # --- Command Handlers ---
 
@@ -113,24 +123,25 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if not update.effective_user or not update.message:
         return
 
-    user_name = update.effective_user.first_name
+    # Safely escape the user's name just in case it contains < or >
+    safe_user_name = html.escape(update.effective_user.first_name)
     welcome_text = (
-        f"👋 *Hello, {user_name}!* \n\n"
+        f"👋 <b>Hello, {safe_user_name}!</b> \n\n"
         "I am your AI Trend Analyzer.\n\n"
-        "Use `/trending` to scan the web and extract the latest emerging tech trends."
+        "Use <code>/trending</code> to scan the web and extract the latest emerging tech trends."
     )
-    await update.message.reply_text(welcome_text, parse_mode="Markdown")
+    await update.message.reply_text(welcome_text, parse_mode="HTML")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
         
     text = (
-        "🤖 *Bot Commands:*\n"
-        "`/start` - Main menu\n"
-        "`/trending` - Scan web for live trends"
+        "🤖 <b>Bot Commands:</b>\n"
+        "<code>/start</code> - Main menu\n"
+        "<code>/trending</code> - Scan web for live trends"
     )
-    await update.message.reply_text(text, parse_mode="Markdown")
+    await update.message.reply_text(text, parse_mode="HTML")
 
 async def trending_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
